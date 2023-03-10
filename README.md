@@ -2,5 +2,5 @@
 Meteo Station
 
 dependencies:
-DHT sensor library (includes Adafruit sensor)
-EspMQTTClient
+1. DHT sensor library (includes Adafruit sensor)
+2. EspMQTTClient

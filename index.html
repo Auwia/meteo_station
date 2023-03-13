@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html ng-app="grovyApp">
+<head>
+  <meta charset="utf-8" />
+  <title>Meteo Station Massimo Manganiello</title>
+  <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.0.3/angular.js"></script>
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js" type="text/javascript"></script>
+  <script src="https://code.highcharts.com/highcharts.js"></script>
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+  <script src="main.js"></script>
+  <script src="chart.js"></script>
+  <script src="moment.js"></script>
+</head>
+<body ng-controller="GrovyCtrl">
+  <div ng-view></div>
+  <select ng-model="selectedPeriod" ng-options="x for x in period" ng-change="reWrite()"></select>
+  <input ng-model="day" type="date" ng-show="selectedPeriod=='Day' || selectedPeriod=='Month'" ng-change="reWrite()">
+  <br>
+  <chart title="-.- Meteo Measurement -.-" subtitle="Starting prototype experiment. Massimo Manganiello © 2022-11-23 Meteo Station" xData="lineChartXDataOut" yData="lineChartYDataOut" ></chart>
+  <br>
+  <chart title="-.- Meteo Measurement -.-" subtitle="Pressure, Temperature, Altitude" xData="lineChartXDataPress" yData="lineChartYDataPress" ></chart>
+</body>
+</html>

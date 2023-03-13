@@ -2,7 +2,6 @@
 header("Access-Control-Allow-Origin: *");
 header("Content-Type: application/json; charset=UTF-8");
 
-//$conn = new mysqli("localhost", "u112031db1", "4i340So", "u112031db1");
 $conn = new SQLite3('meteo.db');
   
 $input = $_GET["period"];

@@ -10,7 +10,12 @@ nohup php -S 192.168.0.178:8002 &
 
 create daily partition with contrab:
 ~/grovy/pi $ crontab -l
-0 0 * * * /usr/bin/python3 create_db_partition.py
+0 0 * * * /usr/bin/python3 /home/pi/grovy/pi/create_db_partition_temperatures.py
+0 0 * * * /usr/bin/python3 /home/pi/grovy/pi/create_db_partition_humidities.py
+0 0 * * * /usr/bin/python3 /home/pi/grovy/pi/create_db_partition_pressures.py
 
 migration existing data to table partitions:
 python3 migration_db_data_to_partition.py
+
+python date utiliy:
+pip3 install python-dateutil

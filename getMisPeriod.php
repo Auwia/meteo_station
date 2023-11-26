@@ -12,7 +12,10 @@ $format = 'Y-m-d';
 $d = DateTime::createFromFormat($format, $input2);
 
 if ($input == "Day") {
-  $query = "SELECT a.location, a.timestamp as timestamp, ROUND(IFNULL(a.temperature, 0), 2) as temperature, ROUND(IFNULL(b.humidity, 0), 2) as humidity FROM temperatures_" . $d->format('Y_m_d') . " a INNER JOIN humidities_" . $d->format('Y_m_d') . " b ON (a.timestamp = b.timestamp) WHERE strftime('%Y-%m-%d', a.timestamp) = date('" . $input2 . "') ORDER BY a.timestamp ASC";
+    $query = "SELECT a.location, a.timestamp AS timestamp, ROUND(IFNULL(a.temperature, 0), 2) AS temperature, ROUND(IFNULL(b.humidity, 0), 2) AS humidity FROM temperatures a
+        LEFT JOIN humidities b ON a.timestamp = b.timestamp
+        WHERE strftime('%Y-%m-%d', a.timestamp) = date('" . $input2 . "') 
+        ORDER BY a.timestamp ASC";
 }
   
 if ($input == "Last 15") {

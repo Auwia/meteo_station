@@ -6,9 +6,10 @@ DB_PASS="pi_db_meteo"
 DB_NAME="meteo"
 TABLES="temperatures humidities pressures"  # Add your selected tables
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"  # Absolute path to the script directory
-BACKUP_DIR="../backup"
+BACKUP_DIR="$SCRIPT_DIR/backup"
 TIMESTAMP=$(date +"%Y%m%d%H%M%S")
 BACKUP_FILE="$BACKUP_DIR/backup_meteo_db_$TIMESTAMP.sql"
+COMPRESSED_FILE="$BACKUP_FILE.gz"  # Compressed backup file
 GITHUB_REPO="/home/pi/meteo_station"  # Local path to the GitHub repository
 
 # Step 1: Create backup directory if not exists
@@ -21,16 +22,30 @@ if ! mysqldump -u "$DB_USER" -p"$DB_PASS" --databases "$DB_NAME" --tables $TABLE
     exit 1
 fi
 
-# Step 3: Add backup to GitHub repository
-if [ -f "$BACKUP_FILE" ]; then
-    echo "Backup created successfully: $BACKUP_FILE"
+# Sleep for 15 seconds to ensure disk operations complete
+echo "Waiting for disk operations to stabilize..."
+sleep 15
+
+# Step 3: Compress the backup file
+echo "Compressing the backup file..."
+gzip "$BACKUP_FILE"
+if [ $? -ne 0 ]; then
+    echo "Error: Failed to compress the backup file."
+    exit 1
+fi
+echo "Backup compressed successfully: $COMPRESSED_FILE"
+
+# Step 4: Add compressed backup to GitHub repository
+if [ -f "$COMPRESSED_FILE" ]; then
+    echo "Adding backup to GitHub repository..."
     cd "$GITHUB_REPO" || exit
-    cp "$BACKUP_FILE" "$GITHUB_REPO/"
+    cp "$COMPRESSED_FILE" "$GITHUB_REPO/"
     git add .
     git commit -m "Backup on $TIMESTAMP"
     git push origin main
     echo "Backup completed and pushed to GitHub."
 else
-    echo "Error: Backup file not found. Operation aborted."
+    echo "Error: Compressed backup file not found. Operation aborted."
     exit 1
 fi
+

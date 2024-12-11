@@ -3,22 +3,32 @@
 <head>
   <meta charset="utf-8" />
   <title>Meteo Station Massimo Manganiello</title>
-  <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.0.3/angular.js"></script>
-  <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js" type="text/javascript"></script>
+  <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.8.2/angular.min.js"></script>
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
   <script src="https://code.highcharts.com/highcharts.js"></script>
-  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
-  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
-  <script src="main.js"></script>
-  <script src="chart.js"></script>
-  <script src="moment.js"></script>
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+  <link rel="stylesheet" href="css/styles.css">
 </head>
 <body ng-controller="GrovyCtrl">
   <div ng-view></div>
-  <select ng-model="selectedPeriod" ng-options="x for x in period" ng-change="reWrite()"></select>
-  <input ng-model="day" type="date" ng-show="selectedPeriod=='Day' || selectedPeriod=='Month'" ng-change="reWrite()">
+  <div class="form-group">
+    <label for="periodSelect">Select Period:</label>
+    <select id="periodSelect" class="form-control" ng-model="selectedPeriod" ng-options="x for x in period" ng-change="reWrite()"></select>
+  </div>
+  <div class="form-group" ng-show="selectedPeriod=='Day' || selectedPeriod=='Month'">
+    <label for="dateInput">Select Date:</label>
+    <input id="dateInput" class="form-control" type="date" ng-model="day" ng-change="reWrite()">
+  </div>
+  <div>
+    <button ng-click="manualUpdate()">Manual Update</button>
+  <div>
   <br>
-  <chart title="-.- Meteo Measurement -.-" subtitle="Starting prototype experiment. Massimo Manganiello © 2022-11-23 Meteo Station" xData="lineChartXDataOut" yData="lineChartYDataOut" ></chart>
+  <chart title="-.- Meteo Measurement -.-" subtitle="Starting prototype experiment. Massimo Manganiello © 2022-11-23 Meteo Station" xData="lineChartXDataOut" yData="lineChartYDataOut"></chart>
   <br>
-  <chart title="-.- Meteo Measurement -.-" subtitle="Pressure, Temperature, Altitude" xData="lineChartXDataPress" yData="lineChartYDataPress" ></chart>
+  <chart title="-.- Meteo Measurement -.-" subtitle="Pressure, Temperature, Altitude" xData="lineChartXDataPress" yData="lineChartYDataPress"></chart>
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+  <script src="js/main.js"></script>
+  <script src="js/chart.js"></script>
+  <script src="js/moment.js"></script>
 </body>
 </html>

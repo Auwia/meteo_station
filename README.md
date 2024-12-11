@@ -22,3 +22,8 @@ python3 migration_db_data_to_partition_pressures.py
 
 python date utiliy:
 pip3 install python-dateutil
+
+
+
+mysqldump -u pi -p --databases meteo --tables temperatures pressures humidities >> backup/backup.sql
+

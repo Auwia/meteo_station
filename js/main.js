@@ -1,8 +1,8 @@
 var grovyApp = angular.module('grovyApp', ['AngularChart']);
 
 grovyApp.controller("GrovyCtrl", function($scope, $http){
-  
-  $scope.period = ["Last 15", "Day", "Month", "6 Months", "Year"];
+
+  $scope.period = ["Last 35", "Day", "Month", "6 Months", "Year"];
   
   var period_default = "Day";
   $scope.selectedPeriod = "Day";
@@ -10,19 +10,16 @@ grovyApp.controller("GrovyCtrl", function($scope, $http){
   $scope.to = moment().format('YYYY-MM-DD');
   $scope.from = moment().format('YYYY-MM-DD');
   
-  getMis($scope, $http, period_default );
-  getMisPressure($scope, $http, $scope.selectedPeriod);
+  function loadData() {
+    getMis($scope, $http, $scope.selectedPeriod);
+    // getMisPressure($scope, $http, $scope.selectedPeriod);
+  }
 
-  setInterval(function() {
-    getMis($scope, $http, $scope.selectedPeriod);
-    getMisPressure($scope, $http, $scope.selectedPeriod);
-  }, 30000);
-  
-  $scope.reWrite = function() {
-    getMis($scope, $http, $scope.selectedPeriod);
-    getMisPressure($scope, $http, $scope.selectedPeriod);
+  $scope.manualUpdate = function () {
+    console.log('Button clicked (via ng-click)');
+    loadData();
   };
-  
+
   function getMis($scope, $http, period){
     var rest_response = {};
     // Outside
@@ -31,40 +28,41 @@ grovyApp.controller("GrovyCtrl", function($scope, $http){
     var temperatures_out = [];
     var humidity_out = [];
     
-    $http.get('getMisPeriod.php/?period=' + $scope.selectedPeriod + '&date=' + $scope.day).then(function(response){
-      rest_response = response.data;
-      for(var i=0; i < rest_response.length; i++){
+    $http.get('php/getMisPeriod.php/?period=' + $scope.selectedPeriod + '&date=' + moment($scope.day).format('YYYY-MM-DD'))
+	.then(function(response){
+      		rest_response = response.data;
+      		for(var i=0; i < rest_response.length; i++){
         
-        // outside
-        if (rest_response[i]['location'] == 'outside') {
-          var tmp = rest_response[i]['timestamp'];
+        		// outside
+       		 	if (rest_response[i]['location'] == 'outside') {
+       			   	var tmp = rest_response[i]['timestamp'];
 
-          if ($scope.selectedPeriod == 'Last 15'){
-            var lastFive = tmp.substring(11, tmp.length-3);
-          }
+          		if ($scope.selectedPeriod == 'Last 35'){
+            			var lastFive = tmp.substring(11, tmp.length-3);
+          		}
           
-          if ($scope.selectedPeriod == 'Day') {
-            var lastFive = tmp.substr(tmp.length - 8, 5);
-          }  
+          		if ($scope.selectedPeriod == 'Day') {
+            			var lastFive = tmp.substr(tmp.length - 8, 5);
+          		}  
 
-          if ($scope.selectedPeriod == 'Month'){
-            var lastFive = tmp;
-          } 
+          		if ($scope.selectedPeriod == 'Month'){
+            			var lastFive = tmp;
+          		} 
           
-          if ($scope.selectedPeriod == 'Year'){
-            var lastFive = tmp.substring(0,7);
-          }
+          		if ($scope.selectedPeriod == 'Year'){
+            			var lastFive = tmp.substring(0,7);
+          		}
           
-          if ($scope.selectedPeriod == '6 Months'){
-            var lastFive = tmp.substring(0,7);
-          }    
+          		if ($scope.selectedPeriod == '6 Months'){
+            			var lastFive = tmp.substring(0,7);
+          		}    
 
-          timestamps_out.push(lastFive);
-          areas_out.push(rest_response[i]['location']);
-          temperatures_out.push(rest_response[i]['temperature']);
-          humidity_out.push(rest_response[i]['humidity']);
-        }
-      }
+          		timestamps_out.push(lastFive);
+          		areas_out.push(rest_response[i]['location']);
+          		temperatures_out.push(rest_response[i]['temperature']);
+          		humidity_out.push(rest_response[i]['humidity']);
+        	}
+      	}
       
       var data_out = {
         "xDataOut": timestamps_out,
@@ -91,7 +89,7 @@ function getMisPressure($scope, $http, period){
   var temperatures_press = [];
   var altitudes = [];
 
-  $http.get('getMisPressure.php/?period=' + period + '&date=' + $scope.day).then(function(response){
+  $http.get('php/getMisPressure.php/?period=' + period + '&date=' + moment($scope.day).format('YYYY-MM-DD')).then(function(response){
     rest_response_press = response.data;
     for(var i=0; i < rest_response_press.length; i++){
 
@@ -99,7 +97,7 @@ function getMisPressure($scope, $http, period){
       if (rest_response_press[i]['location'] == 'outside') {
         var tmp = rest_response_press[i]['timestamp'];
 
-        if (period == 'Last 15'){
+        if (period == 'Last 35'){
           var lastFive = tmp.substring(11, tmp.length-3);
         }
 

@@ -17,6 +17,6 @@ crontab configuration:
 0 0 * * * /usr/bin/nohup /usr/bin/python3 sleep 15 && /home/pi/meteo_station/python/create_db_partition_humidities.py >> /home/pi/meteo_station/logs/partition_humidities.log 2>&1 &
 0 0 * * * /usr/bin/nohup /usr/bin/python3 sleep 15 && /home/pi/meteo_station/python/create_db_partition_pressures.py >> /home/pi/meteo_station/logs/partition_pressures.log 2>&1 &
 0 0 * * * echo "Cron job started at $(date)" >> /home/pi/meteo_station/logs/backup_db.log && sleep 30 && /home/pi/meteo_station/scripts/backup_db.sh >> /home/pi/meteo_station/logs/backup_db.log 2>&1
+*/1 * * * * /home/pi/meteo_station/python/getTemp.py
 @reboot sleep 30 && /usr/bin/nohup /home/pi/meteo_station/scripts/nuovo_server_meteo_station.sh &> /home/pi/meteo_station/logs/webserver.log &
 @reboot /usr/bin/nohup /home/pi/meteo_station/script/boot.sh &> /home/pi/meteo_station/logs/boot.log &
-

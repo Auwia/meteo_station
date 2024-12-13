@@ -8,22 +8,15 @@ dependencies:
 run php server:
 nohup php -S 192.168.0.178:8002 &
 
-create daily partition with contrab:
-~/grovy/pi $ crontab -l
-0 0 * * * /usr/bin/python3 /home/pi/grovy/pi/create_db_partition_temperatures.py
-0 0 * * * /usr/bin/python3 /home/pi/grovy/pi/create_db_partition_humidities.py
-0 0 * * * /usr/bin/python3 /home/pi/grovy/pi/create_db_partition_pressures.py
-
-
-migration existing data to table partitions:
-python3 migration_db_data_to_partition_temperatures.py
-python3 migration_db_data_to_partition_humidites.py
-python3 migration_db_data_to_partition_pressures.py
-
 python date utiliy:
 pip3 install python-dateutil
 
-
-
-mysqldump -u pi -p --databases meteo --tables temperatures pressures humidities >> backup/backup.sql
+crontab configuration:
+----------------------------
+0 0 * * * /usr/bin/nohup /usr/bin/python3 sleep 15 && /home/pi/meteo_station/python/create_db_partition_temperatures.py >> /home/pi/meteo_station/logs/partition_temperatures.log 2>&1 & 
+0 0 * * * /usr/bin/nohup /usr/bin/python3 sleep 15 && /home/pi/meteo_station/python/create_db_partition_humidities.py >> /home/pi/meteo_station/logs/partition_humidities.log 2>&1 &
+0 0 * * * /usr/bin/nohup /usr/bin/python3 sleep 15 && /home/pi/meteo_station/python/create_db_partition_pressures.py >> /home/pi/meteo_station/logs/partition_pressures.log 2>&1 &
+0 0 * * * echo "Cron job started at $(date)" >> /home/pi/meteo_station/logs/backup_db.log && sleep 30 && /home/pi/meteo_station/scripts/backup_db.sh >> /home/pi/meteo_station/logs/backup_db.log 2>&1
+@reboot sleep 30 && /usr/bin/nohup /home/pi/meteo_station/scripts/nuovo_server_meteo_station.sh &> /home/pi/meteo_station/logs/webserver.log &
+@reboot /usr/bin/nohup /home/pi/meteo_station/script/boot.sh &> /home/pi/meteo_station/logs/boot.log &
 

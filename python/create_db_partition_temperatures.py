@@ -1,30 +1,65 @@
-import sqlite3
-import datetime
+import mysql.connector
+from mysql.connector import Error
+from datetime import datetime, timedelta
+import time
 
-db_file = 'meteo.db'
+def create_db_partition():
+    connection = None
+    try:
+        # Database connection
+        connection = mysql.connector.connect(
+            host='localhost',
+            database='meteo',
+            user='pi',
+            password='pi_db_meteo')
 
-# Get the current date for the partition name
-current_date = datetime.datetime.now().strftime('%Y-%m-%d')
+        cursor = connection.cursor()
 
-# Create a new partition table for the current date
-partition_table_name = 'temperatures_{}'.format(current_date.replace("-", "_"))
+        # Calculate the timestamp for the midnight of the current and next day
+        today = datetime.now()
+        midnight_today = datetime(today.year, today.month, today.day)
+        midnight_next_day = midnight_today + timedelta(days=1)
+        partition_value = int(time.mktime(midnight_next_day.timetuple()))
 
-# SQL statement to create the partition table
-create_partition_table_sql = '''
-CREATE TABLE IF NOT EXISTS {} (
-    timestamp DATE,
-    location VARCHAR(255),
-    temperature REAL
-);
-'''.format(partition_table_name)
+        partition_name = f'p{midnight_today.strftime("%Y%m%d")}'
+        readable_timestamp = today.strftime("%Y-%m-%d %H:%M:%S")
 
-# Connect to the SQLite database
-conn = sqlite3.connect(db_file)
-cursor = conn.cursor()
+        # Check if today's partition already exists
+        cursor.execute(f"SELECT PARTITION_NAME FROM INFORMATION_SCHEMA.PARTITIONS WHERE TABLE_SCHEMA = 'meteo' AND TABLE_NAME = 'temperatures' AND PARTITION_NAME = '{partition_name}'")
+        partition_exists = cursor.fetchone()
 
-# Execute the SQL statement to create the partition table
-cursor.execute(create_partition_table_sql)
+        if partition_exists:
+            print(f"{readable_timestamp} : TEMPERATURE: Partition {partition_name} already exists.")
+            return
 
-# Commit the changes and close the database connection
-conn.commit()
-conn.close()
+        # Check if pmax exists
+        cursor.execute("SELECT PARTITION_NAME FROM INFORMATION_SCHEMA.PARTITIONS WHERE TABLE_SCHEMA = 'meteo' AND TABLE_NAME = 'temperatures' AND PARTITION_NAME = 'pmax'")
+        pmax_exists = cursor.fetchone()
+
+        if pmax_exists:
+            # Add new partition and reorganize pmax
+            alter_query = f"""
+            ALTER TABLE temperatures 
+            REORGANIZE PARTITION pmax INTO (
+                PARTITION {partition_name} VALUES LESS THAN ({partition_value}),
+                PARTITION pmax VALUES LESS THAN MAXVALUE
+            );
+            """
+        else:
+            # Simply add the new partition
+            alter_query = f"ALTER TABLE temperatures ADD PARTITION (PARTITION {partition_name} VALUES LESS THAN ({partition_value}))"
+
+        cursor.execute(alter_query)
+        connection.commit()
+        print(f"{readable_timestamp} : TEMPERATURE: Partition {partition_name} added successfully.")
+
+    except Error as e:
+        print(f"{readable_timestamp} : TEMPERATURE: Error: {e}")
+    finally:
+        if (connection and connection.is_connected()):
+            cursor.close()
+            connection.close()
+            print(f"{readable_timestamp} : TEMPERATURE: MySQL connection is closed")
+
+# Execute the function
+create_db_partition()

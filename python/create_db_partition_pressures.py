@@ -1,56 +1,64 @@
-import sqlite3
-from datetime import datetime
-from dateutil.relativedelta import relativedelta
+import mysql.connector
+from mysql.connector import Error
+from datetime import datetime, timedelta
+import time
 
-def get_date_range(conn):
-    cursor = conn.cursor()
-
-    # Find the minimum and maximum timestamps in the pressures table
-    cursor.execute("SELECT MIN(timestamp), MAX(timestamp) FROM pressures")
-    min_timestamp, max_timestamp = cursor.fetchone()
-
-    cursor.close()
-
-    if min_timestamp is None or max_timestamp is None:
-        raise Exception("No data found in the 'pressures' table.")
-
-    # Convert timestamps to datetime objects
-    min_date = datetime.strptime(min_timestamp, '%Y-%m-%d %H:%M:%S')
-    max_date = datetime.strptime(max_timestamp, '%Y-%m-%d %H:%M:%S')
-
-    return min_date, max_date
-
-def create_partitions(conn):
-    cursor = conn.cursor()
-
-    # Get the minimum and maximum timestamps from the 'pressures' table
-    min_date, max_date = get_date_range(conn)
-
-    # Calculate the date range for partitions
-    current_date = min_date
-    while current_date <= max_date:
-        # Generate the table name for the partition (e.g., pressures_2023_01)
-        partition_name = "pressures_{}".format(current_date.strftime('%Y_%m'))
-
-        # Create the partition table
-        create_partition_sql = (
-            "CREATE TABLE IF NOT EXISTS {} AS "
-            "SELECT * FROM pressures "
-            "WHERE strftime('%Y-%m', timestamp) = ?;"
-        ).format(partition_name)
-        cursor.execute(create_partition_sql, (current_date.strftime('%Y-%m'),))
-        conn.commit()
-
-        # Move to the next month
-        current_date += relativedelta(months=1)
-
-    cursor.close()
-
-if __name__ == '__main__':
+def create_db_partition():
     try:
-        connection = sqlite3.connect('meteo.db')
-        create_partitions(connection)
-        connection.close()
-        print("Partitions created successfully.")
-    except Exception as e:
-        print("Error: " + str(e))
+        # Database connection
+        connection = mysql.connector.connect(
+            host='localhost',
+            database='meteo',
+            user='pi',
+            password='pi_db_meteo')
+
+        cursor = connection.cursor()
+
+        # Calculate the timestamp for the midnight of the current and next day
+        today = datetime.now()
+        midnight_today = datetime(today.year, today.month, today.day)
+        midnight_next_day = midnight_today + timedelta(days=1)
+        partition_value = int(time.mktime(midnight_next_day.timetuple()))
+
+        partition_name = f'p{midnight_today.strftime("%Y%m%d")}'
+        readable_timestamp = today.strftime("%Y-%m-%d %H:%M:%S")
+
+        # Check if today's partition already exists
+        cursor.execute(f"SELECT PARTITION_NAME FROM INFORMATION_SCHEMA.PARTITIONS WHERE TABLE_SCHEMA = 'meteo' AND TABLE_NAME = 'pressures' AND PARTITION_NAME = '{partition_name}'")
+        partition_exists = cursor.fetchone()
+
+        if partition_exists:
+            print(f"{readable_timestamp} : PRESSURE: Partition {partition_name} already exists.")
+            return
+
+        # Check if pmax exists
+        cursor.execute("SELECT PARTITION_NAME FROM INFORMATION_SCHEMA.PARTITIONS WHERE TABLE_SCHEMA = 'meteo' AND TABLE_NAME = 'pressures' AND PARTITION_NAME = 'pmax'")
+        pmax_exists = cursor.fetchone()
+
+        if pmax_exists:
+            # Add new partition and reorganize pmax
+            alter_query = f"""
+            ALTER TABLE pressures 
+            REORGANIZE PARTITION pmax INTO (
+                PARTITION {partition_name} VALUES LESS THAN ({partition_value}),
+                PARTITION pmax VALUES LESS THAN MAXVALUE
+            );
+            """
+        else:
+            # Simply add the new partition
+            alter_query = f"ALTER TABLE pressures ADD PARTITION (PARTITION {partition_name} VALUES LESS THAN ({partition_value}))"
+
+        cursor.execute(alter_query)
+        connection.commit()
+        print(f"{readable_timestamp} : PRESSURE: Partition {partition_name} added successfully.")
+
+    except Error as e:
+        print(f"{readable_timestamp} : PRESSURE: Error: {e}")
+    finally:
+        if (connection.is_connected()):
+            cursor.close()
+            connection.close()
+            print(f"{readable_timestamp} : PRESSURE: MySQL connection is closed")
+
+# Execute the function
+create_db_partition()

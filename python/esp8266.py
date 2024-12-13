@@ -10,7 +10,7 @@ import logging
 import subprocess
 
 Broker = '192.168.0.178'
-logging.basicConfig(filename='/home/pi/grovy/pi/esp8266.log', level=logging.DEBUG)
+logging.basicConfig(filename='/home/pi/meteo_station/logs/esp8266.log', level=logging.DEBUG)
 
 # Update with your MySQL database credentials
 mysql_config = {

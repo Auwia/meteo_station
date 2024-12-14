@@ -13,10 +13,10 @@ pip3 install python-dateutil
 
 crontab configuration:
 ----------------------------
-0 0 * * * /usr/bin/nohup /usr/bin/python3 sleep 15 && /home/pi/meteo_station/python/create_db_partition_temperatures.py >> /home/pi/meteo_station/logs/partition_temperatures.log 2>&1 & 
-0 0 * * * /usr/bin/nohup /usr/bin/python3 sleep 15 && /home/pi/meteo_station/python/create_db_partition_humidities.py >> /home/pi/meteo_station/logs/partition_humidities.log 2>&1 &
-0 0 * * * /usr/bin/nohup /usr/bin/python3 sleep 15 && /home/pi/meteo_station/python/create_db_partition_pressures.py >> /home/pi/meteo_station/logs/partition_pressures.log 2>&1 &
-0 0 * * * echo "Cron job started at $(date)" >> /home/pi/meteo_station/logs/backup_db.log && sleep 30 && /home/pi/meteo_station/scripts/backup_db.sh >> /home/pi/meteo_station/logs/backup_db.log 2>&1
 */1 * * * * /home/pi/meteo_station/python/getTemp.py
+0 0 * * * /usr/bin/nohup /bin/sh -c "/bin/sleep 15 && /usr/bin/python3 /home/pi/meteo_station/python/create_db_partition_temperatures.py" >> /home/pi/meteo_station/logs/partition_temperatures.log 2>&1 &
+0 0 * * * /usr/bin/nohup /bin/sh -c "/bin/sleep 15 && /usr/bin/python3 /home/pi/meteo_station/python/create_db_partition_humidities.py" >> /home/pi/meteo_station/logs/partition_humidities.log 2>&1 &
+0 0 * * * /usr/bin/nohup /bin/sh -c "/bin/sleep 15 && /usr/bin/python3 /home/pi/meteo_station/python/create_db_partition_pressures.py" >> /home/pi/meteo_station/logs/partition_pressures.log 2>&1 &
+0 0 * * * /usr/bin/nohup /bin/sh -c "/bin/sleep 30 && /home/pi/meteo_station/scripts/backup_db.sh" >> /home/pi/meteo_station/logs/backup_db.log 2>&1 &
 @reboot sleep 30 && /usr/bin/nohup /home/pi/meteo_station/scripts/nuovo_server_meteo_station.sh &> /home/pi/meteo_station/logs/webserver.log &
 @reboot /usr/bin/nohup /home/pi/meteo_station/scripts/boot.sh &> /home/pi/meteo_station/logs/boot.log &

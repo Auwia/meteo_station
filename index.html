@@ -25,14 +25,16 @@
     <input id="dateInput" class="form-control" type="date" ng-model="day" ng-change="reWrite()">
   </div>
   <div>
-    <button ng-click="manualUpdate()">Manual Update</button>
+    <button class="btn btn-primary" ng-click="manualUpdate()">Manual Update</button>
   <div>
   <br>
+<div ng-show="isLoading" class="loading-overlay">
+  <div class="loader"></div>
+  <p>Loading data, please wait...</p>
+</div>
   <chart title="-.- Meteo Measurement -.-" subtitle="Starting prototype experiment. Massimo Manganiello © 2022-11-23 Meteo Station" xData="lineChartXDataOut" yData="lineChartYDataOut"></chart>
   <br>
-<!--
   <chart title="-.- Meteo Measurement -.-" subtitle="Pressure, Temperature, Altitude" xData="lineChartXDataPress" yData="lineChartYDataPress"></chart>
--->
   <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
   <script src="js/main.js"></script>
   <script src="js/chart.js"></script>

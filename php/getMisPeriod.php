@@ -41,7 +41,6 @@ function getExistingPartitions($conn, $table) {
                 $partitions[] = $partition_name;
             }
         }
-        error_log("Partizioni filtrate: " . implode(", ", $partitions));
     } else {
         error_log("Errore query partizioni: " . mysqli_error($conn));
     }
@@ -52,8 +51,12 @@ function getExistingPartitions($conn, $table) {
 // Filter partitions based on existing ones
 function filterPartitions($daterange, $existingPartitions) {
     $filtered = [];
+    $today = new DateTime();
     
     foreach ($daterange as $date) {
+	if ($date > $today) {
+            break; 
+        }
         $partitionName = 'p' . $date->format('Ymd');
         if (in_array($partitionName, $existingPartitions)) {
             $filtered[] = $partitionName; // Aggiungi solo se esiste
@@ -72,7 +75,7 @@ if ($input == "Month") {
 
     $start = new DateTime($start_date);
     $end = new DateTime($end_date);
-    $end = $end->modify('+1 day'); // Include the end date for the range
+    // $end = $end->modify('+1 day'); // Include the end date for the range
 
     $interval = new DateInterval('P1D');
     $daterange = new DatePeriod($start, $interval, $end);
@@ -91,7 +94,6 @@ if ($input == "Month") {
           DATE_FORMAT(a.timestamp, '%Y-%m-%d') as timestamp,
           ROUND(AVG(IFNULL(a.temperature, 0)), 2) as temperature
       FROM $temperature_table PARTITION (" . $partitionList . ") a
-      WHERE a.timestamp BETWEEN '$start_date' AND '$end_date'
       GROUP BY a.location, DATE_FORMAT(a.timestamp, '%Y-%m-%d')) as subquery
  INNER JOIN
      (SELECT
@@ -99,7 +101,6 @@ if ($input == "Month") {
           DATE_FORMAT(b.timestamp, '%Y-%m-%d') as timestamp,
           ROUND(AVG(IFNULL(b.humidity, 0)), 2) as humidity
       FROM $humidity_table PARTITION (" . $partitionList . ") b
-      WHERE b.timestamp BETWEEN '$start_date' AND '$end_date'
       GROUP BY b.location, DATE_FORMAT(b.timestamp, '%Y-%m-%d')) as subquery2
  ON subquery.timestamp = subquery2.timestamp AND subquery.location = subquery2.location
  ORDER BY subquery.timestamp ASC";
@@ -163,8 +164,6 @@ if ($input == "Year") {
               ON a.timestamp = b.timestamp
               GROUP BY MONTH(a.timestamp)
               ORDER BY a.timestamp ASC";
-
-    error_log("Query generata: " . $query);
 }
 
 if ($input == "Day") {
@@ -211,7 +210,6 @@ if ($input == "6 Months") {
                  ROUND(AVG(IFNULL(b.humidity, 0)), 2) AS humidity 
               FROM $temperature_table PARTITION (" . $partitionListTemp . ") a
               LEFT JOIN $humidity_table PARTITION (" . $partitionListHum . ") b ON a.timestamp = b.timestamp
-              WHERE a.timestamp BETWEEN '$start_date' AND '$input2'
               GROUP BY YEAR(a.timestamp), MONTH(a.timestamp)
               ORDER BY YEAR(a.timestamp) ASC, MONTH(a.timestamp) ASC";
 }
@@ -221,7 +219,7 @@ if (!isset($query)) {
     error_log("Invalid input: $input");
 }
 
-// error_log("Running SQL Query: $query");
+error_log("Running SQL Query: $query");
 
 $result = $conn->query($query);
 

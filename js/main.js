@@ -16,8 +16,16 @@ grovyApp.controller("GrovyCtrl", function ($scope, $http) {
   // Carica i dati iniziali
   function loadData() {
     console.log("Caricamento dati per il periodo:", $scope.selectedPeriod, "e la data:", $scope.day, "e l'anno:", $scope.selectedYear);
-    getMis($scope, $http, $scope.selectedPeriod);
+  
+    $scope.isLoading = true;
+
+    getMis($scope, $http, $scope.selectedPeriod)
+      .finally(() => {
+      	$scope.isLoading = false;
+    });	
+
 //    getMisPressure($scope, $http, $scope.selectedPeriod);
+
   }
 
   // Funzione per aggiornamento manuale
@@ -40,7 +48,7 @@ grovyApp.controller("GrovyCtrl", function ($scope, $http) {
       url = "php/getMisPeriod.php/?period=" + period + "&date=" + selectedDate;
     }
 
-    $http
+    return $http
       .get(url)
       .then(function (response) {
         if (response.data && Array.isArray(response.data)) {

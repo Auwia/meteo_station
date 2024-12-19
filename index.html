@@ -16,6 +16,10 @@
     <label for="periodSelect">Select Period:</label>
     <select id="periodSelect" class="form-control" ng-model="selectedPeriod" ng-options="x for x in period" ng-change="reWrite()"></select>
   </div>
+  <div class="form-group" ng-show="selectedPeriod == 'Year'">
+    <label for="yearInput">Select Year:</label>
+    <input id="yearInput" class="form-control" type="number" ng-model="selectedYear" min="2000" max="2100" placeholder="Enter Year" ng-change="reWrite()">
+  </div>
   <div class="form-group" ng-show="selectedPeriod=='Day' || selectedPeriod=='Month'">
     <label for="dateInput">Select Date:</label>
     <input id="dateInput" class="form-control" type="date" ng-model="day" ng-change="reWrite()">

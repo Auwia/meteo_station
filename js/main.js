@@ -6,7 +6,8 @@ grovyApp.controller("GrovyCtrl", function ($scope, $http) {
 
   // Inizializzazione dei valori di default
   $scope.selectedPeriod = "Day";
-  $scope.day = new Date(); // Usa un oggetto Date per il campo "date"
+  $scope.day = new Date(); 
+  $scope.selectedYear = new Date().getFullYear();
   $scope.lineChartXDataOut = [];
   $scope.lineChartYDataOut = [];
   $scope.lineChartXDataPress = [];
@@ -14,7 +15,7 @@ grovyApp.controller("GrovyCtrl", function ($scope, $http) {
 
   // Carica i dati iniziali
   function loadData() {
-    console.log("Caricamento dati per il periodo:", $scope.selectedPeriod, "e la data:", $scope.day);
+    console.log("Caricamento dati per il periodo:", $scope.selectedPeriod, "e la data:", $scope.day, "e l'anno:", $scope.selectedYear);
     getMis($scope, $http, $scope.selectedPeriod);
 //    getMisPressure($scope, $http, $scope.selectedPeriod);
   }
@@ -28,10 +29,19 @@ grovyApp.controller("GrovyCtrl", function ($scope, $http) {
   // Funzione per ottenere dati meteo generali
   function getMis($scope, $http, period) {
     var selectedDate = moment($scope.day).format("YYYY-MM-DD");
-    console.log("Richiesta dati meteo generali per il periodo:", period, "e la data:", selectedDate);
+    var selectedYear = $scope.selectedYear || new Date().getFullYear();
+    var yearParam = $scope.selectedYear;
+    console.log("Richiesta dati meteo generali per il periodo:", period, "e la data:", selectedDate, " e l'anno:", yearParam);
+
+    var url;
+    if (period === "Year") {
+      url = "php/getMisPeriod.php/?period=" + period + "&year=" + yearParam;
+    } else {
+      url = "php/getMisPeriod.php/?period=" + period + "&date=" + selectedDate;
+    }
 
     $http
-      .get("php/getMisPeriod.php/?period=" + period + "&date=" + selectedDate)
+      .get(url)
       .then(function (response) {
         if (response.data && Array.isArray(response.data)) {
           var rest_response = response.data;
@@ -142,10 +152,9 @@ grovyApp.controller("GrovyCtrl", function ($scope, $http) {
     return true;
   }
 
-  // Aggiorna i dati quando cambia il periodo selezionato
-  $scope.$watch("selectedPeriod", function (newVal, oldVal) {
-    if (newVal !== oldVal) {
-      console.log("Periodo selezionato cambiato:", newVal);
+  $scope.$watchGroup(["selectedPeriod", "selectedYear"], function (newVals, oldVals) {
+    if (newVals !== oldVals) {
+      console.log("Periodo o anno selezionato cambiato:", newVals);
       loadData();
     }
   });

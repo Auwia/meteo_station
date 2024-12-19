@@ -7,7 +7,7 @@ def create_db_partition():
     try:
         # Database connection
         connection = mysql.connector.connect(
-            host='localhost',
+            host='127.0.0.1',
             database='meteo',
             user='pi',
             password='pi_db_meteo')
@@ -61,4 +61,5 @@ def create_db_partition():
             print(f"{readable_timestamp} : HUMIDTIY: MySQL connection is closed")
 
 # Execute the function
+readable_timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 create_db_partition()

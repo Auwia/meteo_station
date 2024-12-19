@@ -24,24 +24,42 @@ $humidity_table = "humidities";
 
 // Retrieve existing partitions
 function getExistingPartitions($conn, $table) {
-    $partitionNames = [];
-    $query = "SELECT PARTITION_NAME FROM INFORMATION_SCHEMA.PARTITIONS WHERE TABLE_NAME = '$table'";
-    $result = $conn->query($query);
-    while ($row = $result->fetch_assoc()) {
-        $partitionNames[] = $row['PARTITION_NAME'];
+    $partitions = [];
+    $sql = "SELECT PARTITION_NAME 
+            FROM INFORMATION_SCHEMA.PARTITIONS 
+            WHERE TABLE_SCHEMA = DATABASE() 
+            AND TABLE_NAME = '$table' 
+            AND PARTITION_NAME IS NOT NULL";
+
+    $result = mysqli_query($conn, $sql);
+
+    if ($result) {
+        while ($row = mysqli_fetch_assoc($result)) {
+            $partition_name = $row['PARTITION_NAME'];
+            // Filtra solo partizioni che rispettano il formato pYYYYMMDD
+            if (preg_match('/^p\d{8}$/', $partition_name)) {
+                $partitions[] = $partition_name;
+            }
+        }
+        error_log("Partizioni filtrate: " . implode(", ", $partitions));
+    } else {
+        error_log("Errore query partizioni: " . mysqli_error($conn));
     }
-    return $partitionNames;
+
+    return $partitions;
 }
 
 // Filter partitions based on existing ones
-function filterPartitions($dateRange, $existingPartitions) {
+function filterPartitions($daterange, $existingPartitions) {
     $filtered = [];
-    foreach ($dateRange as $date) {
-        $partitionName = "p" . $date->format("Ymd");
+    
+    foreach ($daterange as $date) {
+        $partitionName = 'p' . $date->format('Ymd');
         if (in_array($partitionName, $existingPartitions)) {
-            $filtered[] = $partitionName;
+            $filtered[] = $partitionName; // Aggiungi solo se esiste
         }
     }
+
     return $filtered;
 }
 
@@ -75,7 +93,7 @@ if ($input == "Month") {
       FROM $temperature_table PARTITION (" . $partitionList . ") a
       WHERE a.timestamp BETWEEN '$start_date' AND '$end_date'
       GROUP BY a.location, DATE_FORMAT(a.timestamp, '%Y-%m-%d')) as subquery
- LEFT JOIN
+ INNER JOIN
      (SELECT
           b.location,
           DATE_FORMAT(b.timestamp, '%Y-%m-%d') as timestamp,
@@ -88,31 +106,65 @@ if ($input == "Month") {
 }
 
 if ($input == "Year") {
-    $start_date = date("Y-01-01", strtotime($input2)); // First day of the year
-    $end_date = date("Y-12-31", strtotime($input2));   // Last day of the year
+    $year = isset($_GET["year"]) ? $_GET["year"] : date("Y");
+    $start_date = "$year-01-01";
+    $end_date = "$year-12-31";
 
-    $existingPartitions = getExistingPartitions($conn, $temperature_table);
+    // Ottieni le partizioni esistenti per entrambe le tabelle
+    $existingPartitionsTemperatures = getExistingPartitions($conn, $temperature_table);
+    $existingPartitionsHumidities = getExistingPartitions($conn, $humidity_table);
 
+    if (empty($existingPartitionsTemperatures) || empty($existingPartitionsHumidities)) {
+        die("Errore: Nessuna partizione disponibile per una o più tabelle.");
+    }
+
+    // Trova la partizione massima per ciascuna tabella
+    $max_partition_temperature = end($existingPartitionsTemperatures);
+    $max_partition_humidity = end($existingPartitionsHumidities);
+
+    $max_partition_date_temperature = DateTime::createFromFormat('pYmd', $max_partition_temperature)->format('Y-m-d');
+    $max_partition_date_humidity = DateTime::createFromFormat('pYmd', $max_partition_humidity)->format('Y-m-d');
+
+    // Determina la data finale più bassa tra le due tabelle
+    $max_partition_date = min($max_partition_date_temperature, $max_partition_date_humidity);
+    if ($end_date > $max_partition_date) {
+        $end_date = $max_partition_date;
+    }
+
+    // Crea l'intervallo di date
     $start = new DateTime($start_date);
     $end = new DateTime($end_date);
-    $end = $end->modify('+1 day'); // Include the end date
+    $end->modify('+1 day');
 
     $interval = new DateInterval('P1D');
     $daterange = new DatePeriod($start, $interval, $end);
 
-    $filteredPartitions = filterPartitions($daterange, $existingPartitions);
+    // Filtra le partizioni esistenti per ciascuna tabella
+    $filteredPartitionsTemperatures = filterPartitions($daterange, $existingPartitionsTemperatures);
+    $filteredPartitionsHumidities = filterPartitions($daterange, $existingPartitionsHumidities);
+
+    // Trova le partizioni comuni
+    $filteredPartitions = array_intersect($filteredPartitionsTemperatures, $filteredPartitionsHumidities);
+
+    if (empty($filteredPartitions)) {
+        die("Errore: Nessuna partizione valida disponibile per l'intervallo di date.");
+    }
+
     $partitionList = implode(", ", $filteredPartitions);
 
-    $query = "SELECT 
-                 a.location, 
-                 DATE_FORMAT(a.timestamp, '%Y-%m') AS timestamp, 
-                 ROUND(AVG(IFNULL(a.temperature, 0)), 2) AS temperature, 
-                 ROUND(AVG(IFNULL(b.humidity, 0)), 2) AS humidity 
-              FROM $temperature_table PARTITION (" . $partitionList . ") a
-              LEFT JOIN $humidity_table PARTITION (" . $partitionList . ") b ON a.timestamp = b.timestamp
-              WHERE a.timestamp BETWEEN '$start_date' AND '$end_date'
+    // Costruisci la query SQL
+    $query = "SELECT
+                 a.location,
+                 DATE_FORMAT(a.timestamp, '%Y-%m') AS timestamp,
+                 ROUND(AVG(IFNULL(a.temperature, 0)), 2) AS temperature,
+                 ROUND(AVG(IFNULL(b.humidity, 0)), 2) AS humidity
+              FROM $temperature_table PARTITION ($partitionList) a
+              INNER JOIN $humidity_table PARTITION ($partitionList) b 
+              ON a.timestamp = b.timestamp
               GROUP BY MONTH(a.timestamp)
               ORDER BY a.timestamp ASC";
+
+    error_log("Query generata: " . $query);
 }
 
 if ($input == "Day") {

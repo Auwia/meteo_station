@@ -7,8 +7,8 @@ def find_missing_partitions_for_table(cursor, table_name):
 
     # Fetch all existing partitions for the table
     cursor.execute(f"""
-        SELECT PARTITION_NAME, PARTITION_DESCRIPTION 
-        FROM INFORMATION_SCHEMA.PARTITIONS 
+        SELECT PARTITION_NAME, PARTITION_DESCRIPTION
+        FROM INFORMATION_SCHEMA.PARTITIONS
         WHERE TABLE_SCHEMA = 'meteo' AND TABLE_NAME = '{table_name}';
     """)
     partitions = cursor.fetchall()
@@ -27,23 +27,24 @@ def find_missing_partitions_for_table(cursor, table_name):
         elif partition_name == 'pmax':
             max_partition = partition_name
 
-    # Include today's date in the missing partitions check
+    # Determine the full range of dates
     today = dt_date.today()
-    missing_dates = []
-    if today not in existing_dates:
-        print(f"Today's partition ({today.strftime('%Y-%m-%d')}) is missing.")
-        missing_dates.append(today)
-
-    # Find the range of dates covered by the partitions
     if existing_dates:
         start_date = min(existing_dates)
         end_date = max(existing_dates)
+    else:
+        start_date = today
+        end_date = today
 
-        # Generate all expected dates between start and end date
-        all_dates = set(start_date + timedelta(days=i) for i in range((end_date - start_date).days + 1))
+    # Include today's date in the range
+    if today > end_date:
+        end_date = today
 
-        # Identify other missing dates
-        missing_dates.extend(sorted(all_dates - existing_dates))
+    # Generate all expected dates in the range
+    all_dates = set(start_date + timedelta(days=i) for i in range((end_date - start_date).days + 1))
+
+    # Identify missing dates
+    missing_dates = sorted(all_dates - existing_dates)
 
     # Generate SQL commands to add missing partitions
     sql_commands = []
@@ -51,11 +52,10 @@ def find_missing_partitions_for_table(cursor, table_name):
         next_day = missing_date + timedelta(days=1)
         if max_partition:
             sql_command = (
-                f"ALTER TABLE {table_name} REORGANIZE PARTITION p" + next_day.strftime('%Y%m%d') + " INTO ("
-                "PARTITION p" + missing_date.strftime('%Y%m%d') + " VALUES LESS THAN (UNIX_TIMESTAMP('" + next_day.strftime('%Y-%m-%d') + " 00:00:00')), "
-                "PARTITION p" + next_day.strftime('%Y%m%d') + " VALUES LESS THAN (UNIX_TIMESTAMP('" + (next_day + timedelta(days=1)).strftime('%Y-%m-%d') + " 00:00:00')));"
+                f"ALTER TABLE {table_name} REORGANIZE PARTITION {max_partition} INTO ("
+                f"PARTITION p{missing_date.strftime('%Y%m%d')} VALUES LESS THAN (UNIX_TIMESTAMP('{next_day.strftime('%Y-%m-%d')} 00:00:00')), "
+                f"PARTITION {max_partition} VALUES LESS THAN MAXVALUE);"
             )
-
         else:
             sql_command = (
                 f"ALTER TABLE {table_name} "
@@ -79,7 +79,7 @@ def find_missing_partitions():
     try:
         # Connect to MariaDB
         connection = mysql.connector.connect(
-            host='localhost',  # Adjust if necessary
+            host='127.0.0.1',  # Adjust if necessary
             database='meteo',  # Database name
             user='pi',         # Username
             password='pi_db_meteo'  # Password

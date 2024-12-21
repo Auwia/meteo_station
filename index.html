@@ -3,41 +3,50 @@
 <head>
   <meta charset="utf-8" />
   <title>Meteo Station Massimo Manganiello</title>
+
+  <!-- AngularJS -->
   <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.8.2/angular.min.js"></script>
+
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <!-- jQuery -->
   <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-  <script src="https://code.highcharts.com/highcharts.js"></script>
-  <script src="https://code.highcharts.com/modules/accessibility.js"></script>
+
+  <!-- Bootstrap -->
   <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+
+  <!-- CSS -->
   <link rel="stylesheet" href="css/styles.css">
 </head>
-<body ng-controller="GrovyCtrl">
-  <div ng-view></div>
-  <div class="form-group">
-    <label for="periodSelect">Select Period:</label>
-    <select id="periodSelect" class="form-control" ng-model="selectedPeriod" ng-options="x for x in period" ng-change="reWrite()"></select>
-  </div>
-  <div class="form-group" ng-show="selectedPeriod == 'Year'">
-    <label for="yearInput">Select Year:</label>
-    <input id="yearInput" class="form-control" type="number" ng-model="selectedYear" min="2000" max="2100" placeholder="Enter Year" ng-change="reWrite()">
-  </div>
-  <div class="form-group" ng-show="selectedPeriod=='Day' || selectedPeriod=='Month'">
-    <label for="dateInput">Select Date:</label>
-    <input id="dateInput" class="form-control" type="date" ng-model="day" ng-change="reWrite()">
-  </div>
-  <div>
+<body>
+<div ng-controller="GrovyCtrl">
+  <div class="controls">
+    <div class="form-group">
+      <label for="periodSelect">Select Period:</label>
+      <select id="periodSelect" class="form-control" ng-model="selectedPeriod" ng-options="x for x in period" ng-change="manualUpdate()"></select>
+    </div>
+    <div class="form-group">
+      <label for="dateInput">Select Date:</label>
+      <input id="dateInput" class="form-control" type="date" ng-model="day" ng-change="manualUpdate()">
+    </div>
     <button class="btn btn-primary" ng-click="manualUpdate()">Manual Update</button>
-  <div>
-  <br>
-<div ng-show="isLoading" class="loading-overlay">
-  <div class="loader"></div>
-  <p>Loading data, please wait...</p>
+  </div>
+<div class="chart-wrapper" style="margin-bottom: 20px;">
+    <div class="chart-container">
+        <canvas id="custom-chart"></canvas>
+    </div>
 </div>
-  <chart title="-.- Meteo Measurement -.-" subtitle="Starting prototype experiment. Massimo Manganiello © 2022-11-23 Meteo Station" xData="lineChartXDataOut" yData="lineChartYDataOut"></chart>
-  <br>
-  <chart title="-.- Meteo Measurement -.-" subtitle="Pressure, Temperature, Altitude" xData="lineChartXDataPress" yData="lineChartYDataPress"></chart>
-  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
-  <script src="js/main.js"></script>
-  <script src="js/chart.js"></script>
+<div id="loading-icon" class="loading-overlay">
+    <div class="loader-container">
+        <div class="loader"></div>
+        <p>Loading...</p>
+    </div>
+</div>
+  <!-- Main JS -->
   <script src="js/moment.js"></script>
+  <script type="module" src="js/drawChart.js"></script>
+  <script type="module" src="js/main.js"></script>
 </body>
 </html>

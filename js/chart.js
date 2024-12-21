@@ -1,97 +1,97 @@
-angular.module('AngularChart', []).directive('chart', function () {
-    return {
-        restrict:'E',
-        template:'<div></div>',
-        transclude:true,
-        replace:true,
-        scope: '=',
-        link:function (scope, element, attrs) {
-            console.log('oo',attrs,scope[attrs.formatter])
-            var opt = {
-                chart:{
-                    renderTo:element[0],
-                    type:'line',
-                    marginRight:130,
-                    marginBottom:40
-                },
-                title:{
-                    text:attrs.title,
-                    x:-20 //center
-                },
-                subtitle:{
-                    text:attrs.subtitle,
-                    x:-20
-                },
-                xAxis:{
-                    //categories:['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun','Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
-                    tickInterval:1,
-                    title:{
-                        text:attrs.xname
-                    }
-                },
-                plotOptions:{
-                    lineWidth:0.5
-                },
-                yAxis:{
-                    title:{
-                        text:attrs.yname
-                    },
-                    tickInterval:(attrs.yinterval)?new Number(attrs.yinterval):null,
-                    max:attrs.ymax,
-                    min: attrs.ymin
-//                    ,
-//                    plotLines:[
-//                        {
-//                            value:0,
-//                            width:1,
-//                            color:'#808080'
-//                        }
-//                    ]
-                },
-                tooltip:{
-                    formatter:scope[attrs.formatter]||function () {
-                        return '<b>' + this.y + '</b>'
-                    }
-                },
-                legend:{
-                    layout:'vertical',
-                    align:'right',
-                    verticalAlign:'top',
-                    x:-10,
-                    y:100,
-                    borderWidth:0
-                },
-                series:[
-                    {
-                        name:'Tokyo',
-                        data:[7.0, 6.9, 9.5, 14.5, 18.2, 21.5, 25.2, 26.5, 23.3, 18.3, 13.9, 9.6]
-                    }
-                ]
-            }
-
-
-            //Update when charts data changes
-            scope.$watch(function (scope) {
-                return JSON.stringify({
-                    xAxis:{
-                        categories:scope[attrs.xdata]
-                        },
-                    series:scope[attrs.ydata]
-                });
-            }, function (news) {
-                console.log('ola')
-//                if (!attrs) return;
-                news = JSON.parse(news)
-                if (!news.series)return;
-                angular.extend(opt,news)
-                console.log('opt.xAxis.title.text',opt)
-                
-
-
-
-                var chart = new Highcharts.Chart(opt);
-            });
-        }
+function drawChart(canvasId, xData, yData) {
+    const canvas = document.getElementById(canvasId);
+    if (!canvas.getContext) {
+        console.error('Canvas non supportato!');
+        return;
     }
 
-})
+    const ctx = canvas.getContext('2d');
+
+    // Pulizia del canvas
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // Dimensioni e margini
+    const width = canvas.width;
+    const height = canvas.height;
+    const margin = 50;
+
+    // Definizione dell'area di disegno
+    const chartWidth = width - 2 * margin;
+    const chartHeight = height - 2 * margin;
+
+    // Dati di esempio
+    const temperatures = yData[0].data; // Temperature
+    const humidity = yData[1].data; // Humidity
+    const labels = xData; // Date labels
+
+    // Calcolo dei valori massimi
+    const maxTemp = Math.max(...temperatures);
+    const maxHumidity = Math.max(...humidity);
+    const maxY = Math.max(maxTemp, maxHumidity);
+
+    // Disegna l'asse X e Y
+    ctx.beginPath();
+    ctx.moveTo(margin, margin);
+    ctx.lineTo(margin, height - margin); // Y-axis
+    ctx.lineTo(width - margin, height - margin); // X-axis
+    ctx.stroke();
+
+    // Disegna i valori degli assi Y
+    for (let i = 0; i <= 5; i++) {
+        const y = height - margin - (i * chartHeight) / 5;
+        const value = ((maxY / 5) * i).toFixed(1);
+
+        ctx.fillText(value, margin - 30, y + 5); // Etichetta asse Y
+        ctx.beginPath();
+        ctx.moveTo(margin - 5, y);
+        ctx.lineTo(margin, y);
+        ctx.stroke();
+    }
+
+    // Disegna i valori degli assi X
+    labels.forEach((label, index) => {
+        const x = margin + (index * chartWidth) / (labels.length - 1);
+        ctx.fillText(label, x - 15, height - margin + 20); // Etichetta asse X
+    });
+
+    // Disegna la linea della temperatura
+    ctx.beginPath();
+    ctx.strokeStyle = 'red';
+    temperatures.forEach((temp, index) => {
+        const x = margin + (index * chartWidth) / (labels.length - 1);
+        const y = height - margin - (temp / maxY) * chartHeight;
+
+        if (index === 0) {
+            ctx.moveTo(x, y);
+        } else {
+            ctx.lineTo(x, y);
+        }
+    });
+    ctx.stroke();
+
+    // Disegna la linea dell'umidità
+    ctx.beginPath();
+    ctx.strokeStyle = 'blue';
+    humidity.forEach((hum, index) => {
+        const x = margin + (index * chartWidth) / (labels.length - 1);
+        const y = height - margin - (hum / maxY) * chartHeight;
+
+        if (index === 0) {
+            ctx.moveTo(x, y);
+        } else {
+            ctx.lineTo(x, y);
+        }
+    });
+    ctx.stroke();
+
+    // Aggiungi una legenda
+    ctx.fillStyle = 'red';
+    ctx.fillRect(width - 150, margin, 10, 10);
+    ctx.fillStyle = 'black';
+    ctx.fillText('Temperature [°C]', width - 130, margin + 10);
+
+    ctx.fillStyle = 'blue';
+    ctx.fillRect(width - 150, margin + 20, 10, 10);
+    ctx.fillStyle = 'black';
+    ctx.fillText('Humidity [%]', width - 130, margin + 30);
+}

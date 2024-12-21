@@ -1,4 +1,6 @@
-var grovyApp = angular.module('grovyApp', ['AngularChart']);
+import { drawChart } from './drawChart.js';
+
+var grovyApp = angular.module('grovyApp', []);
 
 grovyApp.controller("GrovyCtrl", function ($scope, $http) {
   // Opzioni di periodo disponibili
@@ -13,15 +15,31 @@ grovyApp.controller("GrovyCtrl", function ($scope, $http) {
   $scope.lineChartXDataPress = [];
   $scope.lineChartYDataPress = [];
 
+  function showLoading() {
+      const loadingIcon = document.getElementById('loading-icon');
+      if (loadingIcon) {
+          loadingIcon.style.display = 'flex';
+      }
+  }
+  
+  function hideLoading() {
+      const loadingIcon = document.getElementById('loading-icon');
+      if (loadingIcon) {
+          loadingIcon.style.display = 'none';
+      }
+  }
+
   // Carica i dati iniziali
   function loadData() {
     console.log("Caricamento dati per il periodo:", $scope.selectedPeriod, "e la data:", $scope.day, "e l'anno:", $scope.selectedYear);
   
+    showLoading();
     $scope.isLoading = true;
 
     getMis($scope, $http, $scope.selectedPeriod)
       .finally(() => {
       	$scope.isLoading = false;
+	hideLoading();
     });	
 
 //    getMisPressure($scope, $http, $scope.selectedPeriod);
@@ -80,6 +98,8 @@ grovyApp.controller("GrovyCtrl", function ($scope, $http) {
             { name: "Temperature [°C]", data: temperatures_out },
             { name: "Humidity [%]", data: humidity_out },
           ];
+
+          drawChart('custom-chart', $scope.lineChartXDataOut, $scope.lineChartYDataOut);
 
           console.log("Dati meteo generali caricati:", $scope.lineChartYDataOut);
         } else {

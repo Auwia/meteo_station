@@ -4,6 +4,7 @@ from datetime import datetime, timedelta
 import time
 
 def create_db_partition():
+    readable_timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     try:
         # Database connection
         connection = mysql.connector.connect(
@@ -61,5 +62,4 @@ def create_db_partition():
             print(f"{readable_timestamp} : HUMIDTIY: MySQL connection is closed")
 
 # Execute the function
-readable_timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 create_db_partition()

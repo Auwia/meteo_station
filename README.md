@@ -8,8 +8,22 @@ dependencies:
 run php server:
 nohup php -S 192.168.0.178:8002 &
 
-python date utiliy:
+installation:
+---------------------------
+sudo apt-get update && sudo apt-get upgrade
+sudo apt-get intall mosquitto moquitto-clients
+sudo apt-get install php
 pip3 install python-dateutil
+pip install paho-mqtt
+pip install mysql-connector-python 
+
+mosquitto conf.
+---------------------------
+sudo nano /etc/mosquitto/mosquitto.conf
+
+# add following rows, save and exit:
+listener 1883
+allow_anonymous true
 
 crontab configuration:
 ----------------------------

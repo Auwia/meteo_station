@@ -107,7 +107,8 @@ if ($input == "Month") {
 }
 
 if ($input == "Year") {
-    $year = isset($_GET["year"]) ? $_GET["year"] : date("Y");
+    $year = $input2;
+    error_log("Anno selezionato: " . $year);
     $start_date = "$year-01-01";
     $end_date = "$year-12-31";
 
@@ -123,8 +124,11 @@ if ($input == "Year") {
     $max_partition_temperature = end($existingPartitionsTemperatures);
     $max_partition_humidity = end($existingPartitionsHumidities);
 
-    $max_partition_date_temperature = DateTime::createFromFormat('pYmd', $max_partition_temperature)->format('Y-m-d');
-    $max_partition_date_humidity = DateTime::createFromFormat('pYmd', $max_partition_humidity)->format('Y-m-d');
+    $max_partition_temperature = preg_replace('/^p/', '', $max_partition_temperature);
+    $max_partition_humidity = preg_replace('/^p/', '', $max_partition_humidity);
+
+    $max_partition_date_temperature = DateTime::createFromFormat('Ymd', $max_partition_temperature)->format('Y-m-d');
+    $max_partition_date_humidity = DateTime::createFromFormat('Ymd', $max_partition_humidity)->format('Y-m-d');
 
     // Determina la data finale più bassa tra le due tabelle
     $max_partition_date = min($max_partition_date_temperature, $max_partition_date_humidity);

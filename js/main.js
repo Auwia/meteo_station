@@ -9,7 +9,6 @@ grovyApp.controller("GrovyCtrl", function ($scope, $http) {
   // Inizializzazione dei valori di default
   $scope.selectedPeriod = "Day";
   $scope.day = new Date(); 
-  $scope.selectedYear = new Date().getFullYear();
   $scope.lineChartXDataOut = [];
   $scope.lineChartYDataOut = [];
   $scope.lineChartXDataPress = [];
@@ -31,7 +30,7 @@ grovyApp.controller("GrovyCtrl", function ($scope, $http) {
 
   // Carica i dati iniziali
   function loadData() {
-    console.log("Caricamento dati per il periodo:", $scope.selectedPeriod, "e la data:", $scope.day, "e l'anno:", $scope.selectedYear);
+    console.log("Caricamento dati per il periodo:", $scope.selectedPeriod, "e la data:", $scope.day);
   
     showLoading();
     $scope.isLoading = true;
@@ -55,13 +54,12 @@ grovyApp.controller("GrovyCtrl", function ($scope, $http) {
   // Funzione per ottenere dati meteo generali
   function getMis($scope, $http, period) {
     var selectedDate = moment($scope.day).format("YYYY-MM-DD");
-    var selectedYear = $scope.selectedYear || new Date().getFullYear();
-    var yearParam = $scope.selectedYear;
-    console.log("Richiesta dati meteo generali per il periodo:", period, "e la data:", selectedDate, " e l'anno:", yearParam);
+    var selectedYear = moment(selectedDate, "YYYY-MM-DD").year();
+    console.log("Richiesta dati meteo generali per il periodo:", period, "e la data:", selectedDate);
 
     var url;
     if (period === "Year") {
-      url = "php/getMisPeriod.php/?period=" + period + "&year=" + yearParam;
+      url = "php/getMisPeriod.php/?period=" + period + "&date=" + selectedYear;
     } else {
       url = "php/getMisPeriod.php/?period=" + period + "&date=" + selectedDate;
     }
@@ -179,13 +177,6 @@ grovyApp.controller("GrovyCtrl", function ($scope, $http) {
 
     return true;
   }
-
-  $scope.$watchGroup(["selectedPeriod", "selectedYear"], function (newVals, oldVals) {
-    if (newVals !== oldVals) {
-      console.log("Periodo o anno selezionato cambiato:", newVals);
-      loadData();
-    }
-  });
 
   // Carica i dati iniziali
   loadData();

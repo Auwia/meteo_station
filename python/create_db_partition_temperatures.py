@@ -32,17 +32,17 @@ def create_db_partition():
             print(f"{readable_timestamp} : TEMPERATURE: Partition {partition_name} already exists.")
             return
 
-        # Check if pmax exists
-        cursor.execute("SELECT PARTITION_NAME FROM INFORMATION_SCHEMA.PARTITIONS WHERE TABLE_SCHEMA = 'meteo' AND TABLE_NAME = 'temperatures' AND PARTITION_NAME = 'pmax'")
-        pmax_exists = cursor.fetchone()
+        # Check if pLater exists
+        cursor.execute("SELECT PARTITION_NAME FROM INFORMATION_SCHEMA.PARTITIONS WHERE TABLE_SCHEMA = 'meteo' AND TABLE_NAME = 'temperatures' AND PARTITION_NAME = 'pLater'")
+        pLater_exists = cursor.fetchone()
 
-        if pmax_exists:
-            # Add new partition and reorganize pmax
+        if pLater_exists:
+            # Add new partition and reorganize pLater
             alter_query = f"""
             ALTER TABLE temperatures 
-            REORGANIZE PARTITION pmax INTO (
+            REORGANIZE PARTITION pLater INTO (
                 PARTITION {partition_name} VALUES LESS THAN ({partition_value}),
-                PARTITION pmax VALUES LESS THAN MAXVALUE
+                PARTITION pLater VALUES LESS THAN MAXVALUE
             );
             """
         else:

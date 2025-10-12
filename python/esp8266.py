@@ -16,7 +16,7 @@ logging.basicConfig(filename='/home/pi/meteo_station/logs/esp8266.log', level=lo
 mysql_config = {
     'user': 'pi',
     'password': 'pi_db_meteo',
-    'host': '127.0.0.1',
+    'host': '127.0.0.1', 'port': '3306',
     'database': 'meteo',
     'raise_on_warnings': True,
 }
